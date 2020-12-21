@@ -74,9 +74,9 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void fireBaseMessagingPrepare() async {
-    final fbm = FirebaseMessaging();
-    fbm.requestNotificationPermissions();
-    fbm.configure(
+    final fbm = FirebaseMessaging.instance;
+    //fbm.requestNotificationPermissions();
+    /*fbm.configure(
       onMessage: (msg) {
         print(msg);
         return;
@@ -89,7 +89,7 @@ class _ChatScreenState extends State<ChatScreen> {
         print(msg);
         return;
       },
-    );
+    );*/
     _fbmToken = await fbm.getToken();
     print(_fbmToken);
     fbm.subscribeToTopic('chat');

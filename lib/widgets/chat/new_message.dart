@@ -18,19 +18,21 @@ class _NewMessageState extends State<NewMessage> {
   void _sendMessage() async {
     // FocusScope.of(context).unfocus();
 
-    final user = await FirebaseAuth.instance.currentUser();
-    final userData =
-        await Firestore.instance.collection('users').document(user.uid).get();
+    final user = FirebaseAuth.instance.currentUser;
+    final userData = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
 
     final data = {
       'text': _message,
       'createdAt': Timestamp.now(),
       'userId': user.uid,
-      'username': userData['username'],
-      'userImage': userData['image_url'],
+      'username': userData.data()['username'],
+      'userImage': userData.data()['image_url'],
     };
 
-    Firestore.instance.collection('chat').add(data);
+    FirebaseFirestore.instance.collection('chat').add(data);
 
     widget.sendNotification(data);
 
