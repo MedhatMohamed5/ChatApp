@@ -3,12 +3,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class NewMessage extends StatefulWidget {
+  final void Function(Map<String, dynamic> data) sendNotification;
+
+  NewMessage(this.sendNotification);
   @override
   _NewMessageState createState() => _NewMessageState();
 }
 
 class _NewMessageState extends State<NewMessage> {
   var _message = '';
+  var _isRTL = false;
   final _controller = TextEditingController();
 
   void _sendMessage() async {
@@ -18,13 +22,18 @@ class _NewMessageState extends State<NewMessage> {
     final userData =
         await Firestore.instance.collection('users').document(user.uid).get();
 
-    Firestore.instance.collection('chat').add({
+    final data = {
       'text': _message,
       'createdAt': Timestamp.now(),
       'userId': user.uid,
       'username': userData['username'],
       'userImage': userData['image_url'],
-    });
+    };
+
+    Firestore.instance.collection('chat').add(data);
+
+    widget.sendNotification(data);
+
     _controller.clear();
     setState(() {
       _message = '';
@@ -46,8 +55,13 @@ class _NewMessageState extends State<NewMessage> {
         children: [
           Expanded(
             child: TextField(
+              minLines: 1,
+              maxLines: 3,
+              keyboardType: TextInputType.text,
               controller: _controller,
               textCapitalization: TextCapitalization.sentences,
+              autocorrect: true,
+              enableSuggestions: true,
               decoration: InputDecoration(
                 hintText: 'Send a message ...',
               ),

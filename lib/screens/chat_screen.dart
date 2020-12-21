@@ -1,4 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+
+import 'package:chat_app/constants.dart';
+import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -12,26 +16,12 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  var _fbmToken;
+
   @override
   void initState() {
-    final fbm = FirebaseMessaging();
-    fbm.requestNotificationPermissions();
-    fbm.configure(
-      onMessage: (msg) {
-        print(msg);
-        return;
-      },
-      onLaunch: (msg) {
-        print(msg);
-        return;
-      },
-      onResume: (msg) {
-        print(msg);
-        return;
-      },
-    );
-
     super.initState();
+    fireBaseMessagingPrepare();
   }
 
   @override
@@ -41,6 +31,7 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Text('Chats'),
         actions: [
           DropdownButton(
+            underline: Container(),
             items: [
               DropdownMenuItem(
                 child: Container(
@@ -75,10 +66,61 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: Messages(),
             ),
-            NewMessage(),
+            NewMessage(sendNotification),
           ],
         ),
       ),
     );
+  }
+
+  void fireBaseMessagingPrepare() async {
+    final fbm = FirebaseMessaging();
+    fbm.requestNotificationPermissions();
+    fbm.configure(
+      onMessage: (msg) {
+        print(msg);
+        return;
+      },
+      onLaunch: (msg) {
+        print(msg);
+        return;
+      },
+      onResume: (msg) {
+        print(msg);
+        return;
+      },
+    );
+    _fbmToken = await fbm.getToken();
+    print(_fbmToken);
+    fbm.subscribeToTopic('chat');
+  }
+
+  void sendNotification(Map<String, dynamic> msg) async {
+    var url = 'https://fcm.googleapis.com/fcm/send';
+    var response = await http.post(
+      url,
+      body: json.encode(
+        {
+          "notification": {
+            "title": "Notification from ${msg['username']}",
+            "body": "${msg['text']}"
+          },
+          "priority": "high",
+          "data": {
+            "click_action": "FLUTTER_NOTIFICATION_CLICK",
+            "id": "1",
+            "status": "done"
+          },
+          // "to": "/topics/all",
+          "to": _fbmToken,
+        },
+      ),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization':
+            'key=$SERVER_KEY', // SERVER_KEY is from firebase console in settings for cloud messaging
+      },
+    );
+    print(response.body);
   }
 }
